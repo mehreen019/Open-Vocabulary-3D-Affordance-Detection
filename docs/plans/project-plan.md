@@ -1,634 +1,568 @@
-# Project Plan: Interactive Open-Vocabulary 3D Affordance Detection
+# Unified Project Plan: Interactive 3D Affordance Detection
 
-## 1. Project in One Sentence
+## 1. What We Are Building
 
-Build and evaluate an interactive system that takes a 3D object point cloud and a natural-language affordance query, such as `grasp`, `sit`, or `where should I hold this?`, then highlights the object points that support that action.
+We are building one system for both Pattern Recognition (PR) and Human-Computer Interaction (HCI).
 
-## 2. Project Positioning
+The user selects a 3D object and enters an action in natural language, such as:
 
-This is one merged Pattern Recognition and HCI project.
+- `grasp`
+- `Where should I hold this?`
+- `Show me the part used for holding`
 
-- **Pattern Recognition contribution:** reproduce pretrained OpenAD inference, evaluate it with a documented protocol, study how prompt phrasing affects predictions, and analyze successes and failures.
-- **HCI contribution:** provide an interactive interface that lets a user select an object, enter or refine a natural-language query, inspect the predicted affordance heatmap and confidence, and understand model limitations.
+The system processes the object's 3D point cloud and highlights the points that support the requested action. The user can rotate the object, inspect the prediction, view a confidence summary, change the wording, and compare the new result.
 
-The project is an **implementation, evaluation, and interaction study**, not a claim that we invented OpenAD or trained a new state-of-the-art architecture.
+We start from the pretrained **OpenAD PointNet++ model**. We do not claim to have invented OpenAD. Our project contribution is to:
 
-## 3. Core Research Question
+1. Reproduce and evaluate the pretrained model.
+2. Fine-tune it to handle varied natural-language phrasing more consistently.
+3. Compare the original and fine-tuned models quantitatively and visually.
+4. Build an interactive, human-centered interface around the model.
+5. Study whether the interface helps users inspect, question, and refine imperfect AI predictions.
 
-> How reliably does a pretrained open-vocabulary 3D affordance detector localize functional regions when users express the same intended action using different natural-language prompts, and how can those predictions be presented in an understandable interactive interface?
+## 2. Main Research Question
 
-Supporting questions:
+> Can lightweight prompt-augmented fine-tuning make a pretrained open-vocabulary 3D affordance detector more robust to natural user phrasing, while an interactive interface helps users understand and control its predictions?
 
-1. Does the pretrained model produce useful point-level predictions on the selected test objects?
-2. How much do predictions change when the same affordance is phrased as a label, a question, or a descriptive instruction?
-3. Where does the system fail, particularly for unseen affordances, ambiguous language, or visually similar regions?
-4. Does an interface with heatmaps, confidence information, and query refinement make the output easier to inspect?
+We answer this through four comparisons:
 
-## 4. Scope Decision
+1. Original pretrained OpenAD versus our fine-tuned model.
+2. Short affordance labels versus natural questions and descriptions.
+3. Seen training phrases versus held-out phrasings not used during fine-tuning.
+4. Successful predictions versus ambiguous and failed predictions.
 
-### Required core
-
-- Use the official pretrained OpenAD PointNet++ full-shape checkpoint.
-- Run inference on the official OpenAD/3D AffordanceNet data.
-- Produce point-level colored predictions.
-- Evaluate predictions with the official or repository-compatible protocol.
-- Run a controlled prompt-phrasing experiment.
-- Show representative successes and failures.
-- Build one usable interactive demonstration.
-- Publish a reproducible public GitHub repository.
-- Submit an IEEE-style report and a 5-minute presentation.
-
-### Explicitly out of scope
-
-- Training OpenAD from scratch.
-- Claiming a new neural architecture.
-- Reproducing every number in the OpenAD paper.
-- Training DGCNN or Point Transformer alternatives.
-- Large human-subject experiments.
-- Presenting simulated HCI data as real user-study evidence.
-- Spending the deadline window fixing CUDA after a working inference path exists.
-
-### Optional stretch work
-
-Attempt only after the required core is complete:
-
-1. Per-class IoU and a confusion matrix.
-2. Partial-view inference.
-3. CLIP versus a sentence-transformer text encoder.
-4. t-SNE or UMAP visualization of embeddings.
-5. A very small informal usability walkthrough, reported as formative feedback rather than a formal study.
-
-## 5. What Already Exists and What We Add
-
-### Existing work used
-
-- The OpenAD architecture and official source code.
-- Pretrained OpenAD model weights.
-- PointNet++ point-cloud feature extraction.
-- CLIP text embeddings.
-- The OpenAD/3D AffordanceNet dataset and annotations.
-
-### Our concrete contribution
-
-1. A reproducible pretrained-inference pipeline in this repository.
-2. A documented evaluation performed by us on a fixed test subset or official test split.
-3. A prompt-sensitivity experiment using semantically equivalent queries.
-4. Quantitative comparison of prompt variants.
-5. Qualitative analysis of correct, ambiguous, and failed predictions.
-6. An interactive point-cloud interface with query refinement and model feedback.
-7. A combined PR/HCI analysis explaining accuracy, behavior, usability, and limitations.
-
-The report and presentation must clearly distinguish our results from values copied from the OpenAD paper.
-
-## 6. Intended User Experience
-
-The demo should support this flow:
-
-1. The user selects a sample 3D object.
-2. The user enters an affordance query.
-3. The system runs pretrained OpenAD inference.
-4. The 3D object is displayed with a color heatmap over its points.
-5. The interface displays the query, predicted affordance, and a confidence summary if the model exposes meaningful scores.
-6. The user rotates and zooms the object.
-7. The user changes the wording and compares the new prediction.
-8. The interface communicates uncertainty or unsupported cases without claiming certainty.
-
-Minimum demo fallback: a prepared gallery of recorded predictions with prompt selection. The presentation must not depend on live GPU access.
-
-## 7. Technical Pipeline
+## 3. Technical Approach
 
 ```text
-3D point cloud (N x 3, plus optional features)
-                 |
-                 v
-        PointNet++ visual encoder
-                 |
-                 v
-       Per-point visual embeddings
-                 |
-                 |        Natural-language query
-                 |                  |
-                 |                  v
-                 |          Frozen CLIP encoder
-                 |                  |
-                 +---------> similarity/alignment
-                                    |
-                                    v
-                         per-point affordance score
-                                    |
-                                    v
-                         threshold/color mapping
-                                    |
-                                    v
-                      interactive 3D heatmap output
+3D point cloud
+      |
+      v
+PointNet++ visual encoder ---- per-point visual features
+                                      |
+Natural-language query                |
+      |                               |
+      v                               v
+Frozen CLIP text encoder ---- visual-language similarity
+                                      |
+                                      v
+                         affordance score for each point
+                                      |
+                                      v
+                         interactive colored 3D heatmap
 ```
 
-Technical details to explain in the PR presentation:
+The reference OpenAD implementation uses:
 
-- **Input:** sampled 3D point cloud and a text affordance query.
-- **Visual backbone:** PointNet++ builds local and global point features through hierarchical sampling and grouping.
-- **Language encoder:** frozen CLIP converts the query into a semantic embedding.
-- **Alignment:** point features and the language embedding are compared in a shared representation space.
-- **Output:** a score or class prediction for each point, rendered as an affordance heatmap.
-- **Training status:** official pretrained weights are used; no new end-to-end training is claimed.
-- **Loss and optimizer:** explain those used to train the published checkpoint from the paper/code, while stating that we did not perform that training. Keep this separate from our inference-time experiment.
+- PointNet++ for hierarchical point-cloud feature extraction.
+- Frozen CLIP ViT-B/32 for text embeddings.
+- Visual-language alignment rather than a fixed closed-set classifier.
+- Weighted negative log-likelihood for training.
+- Adam with a published initial learning rate of `1e-3`.
+- Full-shape point clouds sampled to 2,048 points.
 
-## 8. Dataset and Evaluation Protocol
+We must verify these details against the downloaded configuration and source code before placing them in the final reports.
 
-### Dataset facts to verify before publication
+## 4. Complete Project Flow
 
-- Official dataset name and citation.
-- Number of objects, object categories, affordance labels, and points per object.
-- Exact downloaded version and directory structure.
-- Full-shape versus partial-view setting.
-- Official seen/unseen or open-vocabulary split definition.
-- Any normalization, point sampling, augmentation, or label remapping performed by the reference code.
+### Step 1: Freeze the scope and experiment
 
-Do not place unverified dataset counts in the report or slides.
+Before coding, commit to the following scope:
 
-### Primary evaluation
+- Use the official OpenAD PointNet++ full-shape checkpoint.
+- Use the official 3D AffordanceNet/OpenAD data and split.
+- Make mIoU the primary metric.
+- Fine-tune from the released checkpoint; do not train from scratch.
+- Change language supervision through prompt augmentation.
+- Build one interface that serves as both the PR demonstration and HCI system.
+- Treat partial-view evaluation, alternative backbones, and embedding visualizations as optional work only.
 
-Use the full-shape setting because it is the shortest and safest route to a complete demonstration.
+The final claim is an application and targeted adaptation of OpenAD, not a new architecture or a state-of-the-art result.
 
-Report metrics that can be correctly reproduced by the official evaluator:
+**Completion check:** every team member can explain the project and contribution in 30 seconds.
 
-- **mIoU:** overlap between predicted and ground-truth affordance regions.
-- **mAP:** ranking/detection quality across affordance classes or queries.
-- **AUC:** threshold-independent quality of point-level predictions.
+### Step 2: Set up the environment and obtain the assets
 
-If time prevents reliable reproduction of all three, report the verified metric or metrics only. Never fabricate missing values.
+1. Create a clean Python environment.
+2. Install a compatible PyTorch build and OpenAD dependencies.
+3. Confirm whether the GPU is visible to PyTorch.
+4. Download the official full-shape dataset.
+5. Download the pretrained PointNet++ full-shape checkpoint.
+6. Configure dataset and checkpoint paths without personal absolute paths.
+7. Record the Python, PyTorch, CUDA, GPU, dependency, dataset, and checkpoint versions.
 
-Report seen and unseen results separately when supported by the selected protocol.
+The dataset and checkpoints must not be committed to Git. The README will provide their official download links and expected locations.
 
-### Evaluation subset fallback
+**Time limit:** four hours. If the local environment remains blocked, move inference and training to Kaggle or Colab instead of repeatedly rebuilding CUDA.
 
-If evaluating the entire official split is too slow:
+**Completion check:** the model and one dataset sample load without error.
 
-1. Select a fixed, diverse subset before looking at results.
-2. Record every sample identifier and selection rule.
-3. Include both seen and unseen cases where possible.
-4. Use the same subset for every prompt condition.
-5. Call it a subset evaluation everywhere; do not imply full-dataset performance.
+### Step 3: Reproduce the pretrained baseline
 
-### Baselines
+1. Run the official pretrained checkpoint without changing model behavior.
+2. Generate a prediction for one object using its canonical affordance label.
+3. Export the point coordinates, ground-truth mask, prediction scores, and colored point cloud.
+4. Confirm that the prediction is nonempty and visually plausible.
+5. Save the exact command, configuration, logs, and output.
+6. Wrap the working path in a simple repository command that accepts:
+   - configuration path,
+   - checkpoint path,
+   - sample or object identifier,
+   - prompt,
+   - output directory.
 
-The minimum baseline is the canonical affordance-label prompt, for example `grasp`.
+This pretrained run is the guaranteed baseline and remains usable even if fine-tuning fails.
 
-If quickly implementable, add:
+**Completion check:** one documented command produces a reusable prediction artifact.
 
-- Random per-point scores.
-- Majority or most-frequent affordance prediction.
-- Published OpenAD results as a cited reference value, clearly marked **not reproduced by us**.
+### Step 4: Verify the dataset and evaluation protocol
 
-Because the project is framed as an implementation/application, elaborate model baselines are secondary to a correct and transparent evaluation.
+Read the dataset loader, configuration, and official evaluator. Verify:
 
-## 9. Prompt-Phrasing Experiment
+- Dataset name and version.
+- Object categories and sample counts.
+- Affordance vocabulary.
+- Training, validation, and test split definitions.
+- Training terms and open-vocabulary validation synonyms.
+- Point sampling, normalization, label mapping, and ignored labels.
+- Metric aggregation and prediction thresholding.
 
-### Independent variable
+Do not quote counts or split details in the reports until they are verified from the actual data and code.
 
-Prompt form for the same intended affordance.
+Use the official full-shape open-vocabulary split. Never use test objects, validation synonyms, or held-out evaluation prompts for training.
 
-Use three prompt templates per affordance:
+If the complete evaluation is too slow, define a fixed subset before examining model results. Record every sample ID and the selection rule, use the same subset for every model and prompt condition, and label all results as subset results.
+
+**Completion check:** the exact evaluation population and data boundaries are written down.
+
+### Step 5: Build the evaluation harness
+
+1. Wrap or reuse the official mIoU implementation.
+2. Verify it on one or two samples manually.
+3. Save per-sample, per-affordance, and aggregate results to CSV or JSON.
+4. Report canonical training-word and synonym/open-vocabulary results separately where supported.
+5. Add mAP and AUC only if their definitions and implementations can be verified.
+6. Add simple random or majority floors only if they are meaningful under the exact output formulation.
+
+The required comparison is:
+
+- Original pretrained checkpoint.
+- Our prompt-augmented fine-tuned checkpoint.
+
+Published OpenAD results may appear as cited reference values, but they must be labeled **not reproduced by us** unless we actually reproduce them.
+
+**Completion check:** the pretrained checkpoint has at least one trustworthy metric on a documented evaluation set.
+
+### Step 6: Define the prompt experiment before training
+
+Select three to five affordances supported by the verified vocabulary. For each affordance, create three kinds of prompts:
 
 1. **Label:** `grasp`
 2. **Question:** `Where can I grasp this object?`
 3. **Description:** `The part of the object used for holding`
 
-Use three to five affordances supported by the chosen data, such as grasp, sit, pour, open, or contain. Final terms must match the verified label vocabulary.
+Split the paraphrases into two disjoint groups:
 
-### Controlled conditions
+- **Fine-tuning prompts:** phrases that may be used during training.
+- **Held-out prompts:** different phrases reserved exclusively for evaluation.
 
-- Same model checkpoint.
-- Same point clouds.
-- Same preprocessing and point sampling.
-- Same thresholds and evaluator.
-- Same hardware and software environment where practical.
-- Only prompt wording changes.
+The held-out prompts must be written and frozen before fine-tuning starts. This prevents choosing evaluation wording after seeing the results.
 
-### Measurements
+Store the prompt sets in version-controlled configuration files. For every comparison, keep the checkpoint, samples, preprocessing, metric implementation, and thresholds fixed; only the prompt should change.
 
-- mIoU, mAP, or AUC for each prompt form where ground truth permits.
-- Change in predicted positive-point proportion.
-- Pairwise overlap between heatmaps for equivalent prompts.
-- Representative visual comparison for at least one stable and one unstable case.
+**Completion check:** the affordances, training prompts, and held-out evaluation prompts are frozen and documented.
 
-### Interpretation
+### Step 7: Measure the pretrained model's prompt sensitivity
 
-Answer these questions rather than merely showing a table:
+Before fine-tuning:
 
-- Which prompt form performs best overall?
-- Are concise labels more stable than natural questions?
-- Which affordances are sensitive to wording?
-- Does a visually convincing heatmap always agree with ground truth?
-- What behavior should the interface expose to the user?
+1. Run the pretrained model with the canonical labels.
+2. Run it on the same objects with question prompts.
+3. Run it again with description prompts.
+4. Measure mIoU for each prompt type where ground truth permits.
+5. Measure pairwise overlap or correlation between heatmaps produced for equivalent prompts.
+6. Record the proportion of points predicted as positive.
+7. Identify stable and unstable examples.
 
-## 10. Qualitative Analysis
+This establishes the problem our modification is intended to address. It also motivates the interface's prompt-comparison and query-refinement features.
 
-Prepare at least six examples:
+**Completion check:** a table and several visual examples demonstrate whether wording changes the pretrained model's behavior.
+
+### Step 8: Fine-tune for prompt robustness
+
+The fine-tuning goal is to make semantically equivalent natural-language queries produce more consistent and accurate point-level predictions.
+
+Use the official training objects and masks, but replace or augment the single affordance word with multiple training paraphrases. The spatial target remains the same because equivalent phrases describe the same affordance region.
+
+Fine-tuning procedure:
+
+1. Start from the official pretrained checkpoint.
+2. Keep the CLIP text encoder frozen.
+3. Begin with the visual-language alignment/projection layers trainable and the earlier PointNet++ layers frozen if the architecture permits this cleanly.
+4. If OpenAD has no separable alignment head, unfreeze only the latest PointNet++ feature layers rather than the entire model.
+5. Train using only official training objects and the fine-tuning prompt set.
+6. Use a lower learning rate than the original from-scratch recipe.
+7. Train for a small fixed budget, initially 5 to 10 epochs.
+8. Save checkpoints and validation metrics after each epoch.
+9. Use early stopping based only on validation performance.
+10. Keep the best checkpoint selected without looking at test results.
+
+The exact trainable parameters, learning rate, epochs, batch size, loss, seed, and prompt-sampling method must be recorded. Before training, inspect the actual module names and parameter groups rather than assuming the model has a conventional classifier head.
+
+This is a targeted adaptation using the same dataset, but different language supervision. It is not presented as learning new object geometry or new ground-truth masks.
+
+**Compute limit:** stop after four to six hours of total fine-tuning work. The pretrained baseline must remain the fallback.
+
+**Completion check:** one fine-tuned checkpoint and its complete training record exist.
+
+### Step 9: Run the controlled model comparison
+
+Evaluate both checkpoints under identical conditions:
+
+| Model | Canonical labels | Fine-tuning prompts | Held-out prompts |
+|---|---:|---:|---:|
+| Original pretrained OpenAD | Required | Required | Required |
+| Prompt-augmented fine-tuned OpenAD | Required | Required | Required |
+
+For each condition, report:
+
+- Primary metric: mIoU.
+- Per-affordance mIoU where sample size permits.
+- mAP and AUC only if verified.
+- Heatmap consistency between equivalent prompts.
+- Training time and trainable parameter count.
+
+Interpret all important outcomes:
+
+- Fine-tuning improves held-out phrasing without damaging canonical labels.
+- Fine-tuning improves training phrases but not held-out phrases, indicating overfitting.
+- Fine-tuning improves seen classes but weakens open-vocabulary behavior.
+- Fine-tuning provides no improvement or makes performance worse.
+
+A negative result is acceptable if the protocol is correct and the failure is analyzed honestly.
+
+**Completion check:** one fair before-versus-after results table answers the research question.
+
+### Step 10: Produce qualitative and failure analysis
+
+Select at least six examples from the fixed evaluation set:
 
 - Two clear successes.
 - Two partial or ambiguous successes.
 - Two failures.
-- At least one comparison where prompt wording changes the result.
-- At least one unseen/open-vocabulary example if the protocol supports it.
+- At least one original-versus-fine-tuned comparison.
+- At least one canonical-versus-held-out prompt comparison.
+- At least one synonym/open-vocabulary example if supported by the protocol.
 
-For every example, record:
+For each example, record:
 
-- Object/sample identifier.
+- Object and sample identifier.
 - Ground-truth affordance region.
-- Exact prompt.
-- Predicted heatmap.
-- Metric or confidence value.
-- One-sentence interpretation.
-- Likely reason for failure, without overstating certainty.
+- Exact query.
+- Original-model heatmap.
+- Fine-tuned-model heatmap.
+- Metric or score.
+- A short interpretation.
+- A plausible failure reason without claiming certainty.
 
-Likely failure categories include ambiguous labels, context-dependent actions, spatial adjacency, small functional regions, semantically similar affordances, and domain shift.
+Investigate ambiguity, context-dependent actions, small functional regions, neighboring regions, rare affordances, semantically similar actions, and domain shift.
 
-## 11. HCI Design and Evaluation
+Use a consistent color scale across comparable heatmaps and include ground truth wherever available.
 
-### User goal
+**Completion check:** the selected examples show both strengths and limitations rather than only attractive outputs.
 
-Allow a user to ask how an unfamiliar 3D object can be used and inspect where the model believes that action is possible.
+### Step 11: Design the human-centered interaction
 
-### Design requirements
+Define the user's goal as: ask how an unfamiliar 3D object can be used, inspect the predicted region, and correct or refine the request when the AI is uncertain or wrong.
 
-- The query box accepts natural language.
-- The visualization makes high- and low-scoring regions distinguishable.
-- The original object geometry remains visible.
-- Users can rotate and zoom the point cloud.
-- Users can revise a query without restarting the application.
-- Loading, success, no-result, and error states are visible.
-- The interface does not imply that model output is guaranteed correct.
-- Equivalent prompts can be compared with minimal effort.
+Prepare the HCI foundation:
 
-### Three scenarios
+1. Identify users and stakeholders.
+2. Define functional and non-functional requirements.
+3. Create two personas.
+4. Write three scenarios:
+   - easy: a familiar object and clear query,
+   - moderate: an unfamiliar object or paraphrased query,
+   - difficult: an ambiguous query or incorrect result requiring refinement.
+5. Create a hierarchical task analysis.
+6. Create an affinity diagram from available requirements or formative observations.
+7. Build a requirements-to-goals traceability matrix with 8 to 12 rows.
+8. Sketch the interaction flow and wireframes.
 
-1. **Easy:** A user asks where to grasp a familiar mug-like object.
-2. **Moderate:** A user asks where to sit on an unfamiliar chair-like object and inspects the highlighted region.
-3. **Difficult:** A user enters an ambiguous or unsupported instruction, receives a weak/inconsistent result, and reformulates the query.
+Important HCAI decisions:
 
-### Human-centered analysis
+- **Explainability:** the heatmap communicates where the prediction comes from.
+- **Uncertainty:** scores and warnings avoid presenting predictions as facts.
+- **Human control:** the user can rephrase, compare, reject, or reset a query.
+- **Trust:** failure examples and limitations are visible rather than hidden.
+- **Accessibility:** controls and text are readable, and the color map is not the sole carrier of critical information.
 
-Document:
+**Completion check:** every major interface feature maps to a user requirement and a known model behavior.
 
-- A requirements-to-goals traceability matrix.
-- A hierarchical task analysis of selecting an object, entering a query, inspecting output, and refining the query.
-- Low-fidelity wireframes followed by the implemented interface.
-- Explainability through per-point heatmaps and comparative prompts.
-- Human-in-the-loop control through query revision and result inspection.
-- Trust considerations: uncertainty, error disclosure, and failure examples.
-- Accessibility considerations for color mapping and readable controls.
+### Step 12: Build the interactive application
 
-### HCI evidence
+Build the smallest complete interface, preferably using Gradio with Plotly or a compatible 3D point-cloud component.
 
-Prefer an honest expert walkthrough and scenario-based evaluation if there is no time or approval for real participants. If simulated data from earlier coursework is reused, label it prominently as simulated in the abstract, methods, results, and limitations. Never call simulated responses a real user study.
+Required interaction:
 
-## 12. Repository Target Structure
+1. Select a sample object.
+2. Enter or choose a natural-language query.
+3. Choose the original or fine-tuned model.
+4. Run inference or load a cached prediction.
+5. View and rotate the colored 3D point cloud.
+6. See the exact query and a concise confidence or score summary.
+7. Change the query and compare results.
+8. Reset the view.
+
+Required states:
+
+- Loading.
+- Successful result.
+- Low-confidence or uncertain result.
+- Unsupported or invalid query.
+- Missing model/data error.
+
+Implement the application around cached predictions first. Add live inference only after the complete interaction works. This keeps the demo usable even without presentation-time GPU access.
+
+**Completion check:** another person can complete the full flow without editing code.
+
+### Step 13: Evaluate the HCI system
+
+Preferred evaluation: a small formative study with approximately 3 to 6 available participants after the working prototype exists.
+
+Use tasks derived from the three scenarios. Possible tasks:
+
+1. Find where to perform a stated action on an object.
+2. Decide whether the highlighted region appears reasonable.
+3. Reformulate an ambiguous query.
+4. Compare two prompt results and choose the more useful one.
+5. Respond appropriately to a low-confidence or failed prediction.
+
+Measure:
+
+- Task completion or success.
+- Completion time.
+- Number of query revisions or interaction steps.
+- Errors or assistance required.
+- Short usability and trust ratings.
+- Participant comments and recurring themes.
+
+Document participants, setting, tasks, procedure, measures, and analysis sufficiently for replication. Obtain consent and avoid collecting unnecessary personal data.
+
+If real participants are not feasible, perform an expert cognitive walkthrough and scenario-based evaluation. Simulated data may demonstrate a planned analysis pipeline, but it must be labeled as simulated in the abstract, method, results, and limitations. Never present simulated responses as human-subject findings.
+
+**Completion check:** the HCI evaluation method and evidence are honest, traceable, and tied to the implemented system.
+
+### Step 14: Analyze the unified findings
+
+Bring the PR and HCI findings together:
+
+1. Determine whether prompt-augmented fine-tuning improved accuracy on held-out phrasing.
+2. Determine whether it preserved canonical-label and open-vocabulary performance.
+3. Identify which prompt types and affordances remained unstable.
+4. Explain how those model behaviors informed query refinement, comparison, uncertainty, and failure disclosure in the interface.
+5. Analyze whether users or evaluators understood the heatmap and used the available controls appropriately.
+6. State limitations in the model, data, evaluation, interface, and study.
+
+Do not claim that a visually convincing result is correct without ground truth. Do not claim usability or trust improvements unsupported by the HCI evidence.
+
+**Completion check:** every conclusion points to a metric, figure, observation, citation, or explicit limitation.
+
+### Step 15: Organize the repository
+
+Target structure:
 
 ```text
 .
 |-- README.md
 |-- docs/
 |   |-- plans/
-|   |   `-- project-plan.md
-|   |-- report/
+|   |-- report-pr/
+|   |-- report-hci/
 |   `-- slides/
 |-- src/
 |   |-- data/
 |   |-- inference/
+|   |-- training/
 |   |-- evaluation/
 |   |-- visualization/
 |   `-- app/
 |-- scripts/
 |-- configs/
+|   |-- prompts/
+|   `-- experiments/
 |-- tests/
 |-- results/
 |   |-- metrics/
 |   |-- figures/
-|   `-- predictions/
+|   |-- predictions/
+|   `-- checkpoints/
 |-- demo/
 |-- requirements.txt or environment.yml
 `-- _ref_openad/
 ```
 
-Large datasets and checkpoints must not be committed. Provide download instructions, expected paths, and checksums or filenames when available.
+Keep `_ref_openad/` ignored and provide a setup script that clones its pinned upstream commit. Attribute its MIT-licensed source. Do not commit datasets, downloaded checkpoints, secrets, machine-specific paths, or temporary files.
 
-## 13. Step-by-Step Implementation Plan
+The README must explain:
 
-### Phase 0: Freeze the claim
+- What the project does.
+- What belongs to OpenAD and what we added.
+- Environment setup.
+- Dataset and checkpoint setup.
+- Baseline inference.
+- Fine-tuning.
+- Evaluation.
+- Running the application.
+- Reproducing tables and figures.
+- Citations and licenses.
 
-- [ ] Copy the one-sentence project description into the README.
-- [ ] State that official pretrained OpenAD weights are used.
-- [ ] State that our contribution is evaluation, prompt analysis, and interaction design.
-- [ ] Create a list of claims that require experimental evidence.
+**Completion check:** a reviewer can understand and reproduce the documented workflow from the public repository.
 
-**Exit condition:** every team member can explain the project and contribution in under 30 seconds.
+### Step 16: Write the reports and presentation
 
-### Phase 1: Environment and assets
+Write while experiments run, but insert only verified final numbers.
 
-- [ ] Record available Python, PyTorch, CUDA, GPU, and driver versions.
-- [ ] Create the project environment from pinned dependencies.
-- [ ] Download the official full-shape dataset.
-- [ ] Download the official PointNet++ full-shape checkpoint.
-- [ ] Configure data and checkpoint paths without hard-coded personal paths.
-- [ ] Run one reference command without modifying model behavior.
-- [ ] Save the exact command and logs.
+For the PR material, emphasize the recognition problem, architecture, conscious design choices, fine-tuning modification, fair experimental protocol, quantitative results, qualitative failures, and demonstration.
 
-**Time limit:** 4 hours. If CUDA remains broken, move to a known Colab/Kaggle environment or CPU-compatible inference. Do not begin training.
+For the HCI material, emphasize requirements, personas, scenarios, design rationale, HCAI principles, implementation, evaluation, results, discussion, implications, and limitations.
 
-**Exit condition:** one sample produces a nonempty prediction.
+Use one shared architecture diagram, interface screenshots, qualitative figure set, and system description where appropriate, while changing the analysis for each course.
 
-### Phase 2: Reproducible inference
+The PR presentation should contain six main slides:
 
-- [ ] Wrap the reference inference entry point in a simple repository script.
-- [ ] Accept checkpoint, config, sample, prompt, and output path as arguments.
-- [ ] Set random seeds where applicable.
-- [ ] Export raw point coordinates, ground truth, and prediction scores.
-- [ ] Export a colored `.ply` or equivalent viewable result.
-- [ ] Verify repeated runs produce equivalent outputs.
-- [ ] Add clear failure messages for missing data or checkpoints.
+1. Problem and investigation.
+2. Dataset, preprocessing, split, and metrics.
+3. Architecture and prompt-augmented fine-tuning.
+4. Experimental setup and fair comparisons.
+5. Quantitative results and interpretation.
+6. Qualitative results, failure cases, and recorded demonstration.
 
-**Exit condition:** a clean command generates a prediction artifact for a chosen object and query.
+Add backup slides for hyperparameters, metric definitions, training curves, per-affordance results, additional failures, and interface details. Rehearse the main talk to five minutes and never exceed five minutes and thirty seconds.
 
-### Phase 3: Evaluation harness
+**Completion check:** both reports compile, the slide deck fits the time limit, and all figures and values match the saved experiment outputs.
 
-- [ ] Read the official evaluation implementation before changing it.
-- [ ] Confirm label indexing, ignored labels, thresholds, and aggregation.
-- [ ] Implement or wrap mIoU first.
-- [ ] Add mAP and AUC only if their definitions are verified.
-- [ ] Save per-sample, per-affordance, and aggregate results to CSV/JSON.
-- [ ] Separate seen and unseen results where the official split supports it.
-- [ ] Add a fixed subset manifest if full evaluation is too slow.
-- [ ] Run a small sanity test on one or two samples.
-- [ ] Run the final selected evaluation once the sanity test passes.
+### Step 17: Verify, freeze, and submit
 
-**Exit condition:** at least one trustworthy aggregate metric and its exact evaluation protocol are available.
+1. Run the documented workflow from a clean environment where possible.
+2. Compile both reports from scratch.
+3. Check every citation, caption, table, split name, metric, and result.
+4. Check that pretrained, fine-tuned, reproduced, and cited results are clearly distinguished.
+5. Record a short demonstration video; do not depend on live GPU inference.
+6. Remove secrets, private paths, datasets, and large checkpoints from Git.
+7. Make the GitHub repository public.
+8. Verify the repository and shared-drive links in an incognito window.
+9. Submit before the stated deadline rather than at the last minute.
+10. Keep local copies of the reports, slides, video, results, and repository.
 
-### Phase 4: Prompt experiment
+After the final freeze, change only correctness, reproducibility, or presentation-blocking issues.
 
-- [ ] Select three to five verified affordances.
-- [ ] Define the three prompt templates before running experiments.
-- [ ] Store prompt definitions in a config file.
-- [ ] Run every prompt on the exact same sample set.
-- [ ] Store raw predictions for later comparison.
-- [ ] Produce a summary table by prompt form and affordance.
-- [ ] Calculate heatmap overlap or prediction-change statistics.
-- [ ] Identify stable and unstable examples.
+## 5. Forty-Eight-Hour Execution Schedule
 
-**Exit condition:** one complete table answers whether wording affected performance or prediction behavior.
+### Hours 0-4
 
-### Phase 5: Visualization and demo
+- Complete Steps 1 and 2.
+- Start the PR and HCI report templates.
+- Reach one loaded model and dataset sample.
 
-- [ ] Choose the simplest compatible viewer, preferably Gradio with Plotly or the existing Gradio Model3D component.
-- [ ] Add object/sample selection.
-- [ ] Add a text query input.
-- [ ] Add example prompts.
-- [ ] Render point colors from prediction scores.
-- [ ] Show the exact submitted query and a concise result summary.
-- [ ] Add loading, failure, and unsupported-query states.
-- [ ] Add a reset or compare-prompt workflow.
-- [ ] Test the demo locally from a clean start.
-- [ ] Record the demo as a presentation fallback.
+### Hours 4-10
 
-**Exit condition:** another person can select an object, enter a query, and inspect a result without editing code.
+- Complete Steps 3 through 5.
+- Produce the pretrained baseline prediction and first verified metric.
+- Create the prompt configuration.
 
-### Phase 6: Qualitative analysis
+### Hours 10-18
 
-- [ ] Generate a pool of candidate figures.
-- [ ] Select examples according to the predefined success/failure categories.
-- [ ] Keep the same color scale across comparable figures.
-- [ ] Pair predictions with ground truth where available.
-- [ ] Write one concise interpretation for every selected figure.
-- [ ] Avoid selecting only attractive outputs.
+- Complete Steps 6 through 8.
+- Run pretrained prompt sensitivity first.
+- Start the bounded fine-tuning run.
+- Save every result immediately.
 
-**Exit condition:** the report has balanced visual evidence and at least two explained failures.
+### Hours 18-26
 
-### Phase 7: HCI artifacts
+- Complete Steps 9 through 12.
+- Produce the comparison table and qualitative figures.
+- Build the cached-prediction interface before live inference.
 
-- [ ] Write user goals and system requirements.
-- [ ] Complete the traceability matrix.
-- [ ] Complete the three scenarios.
-- [ ] Complete the hierarchical task analysis.
-- [ ] Save initial wireframes.
-- [ ] Map the implemented controls to the requirements.
-- [ ] Perform scenario walkthroughs and document issues found.
-- [ ] Describe explainability, trust, uncertainty, and accessibility decisions.
-- [ ] Add a visible simulated-data disclosure wherever applicable.
+### Hours 26-34
 
-**Exit condition:** HCI analysis describes and evaluates the same application used in the PR demo.
+- Complete Steps 13 and 14.
+- Run the small formative evaluation or documented fallback.
+- Integrate PR and HCI findings.
+- Record a first working demo.
 
-### Phase 8: Report
+### Hours 34-42
 
-- [ ] Use the official IEEE conference template.
-- [ ] Write the abstract last, after results are fixed.
-- [ ] Include the pipeline/architecture diagram.
-- [ ] Include dataset and preprocessing details.
-- [ ] Explain PointNet++, CLIP, input/output formulation, published training loss, and published optimizer accurately.
-- [ ] Clearly state that our experiments use pretrained weights.
-- [ ] Include experimental setup, prompt conditions, hardware, and software.
-- [ ] Include quantitative results and interpretation.
-- [ ] Include qualitative successes and failures.
-- [ ] Include the interaction design and HCI analysis.
-- [ ] Include limitations, ethical considerations, and future work.
-- [ ] Cite OpenAD, PointNet++, CLIP, the dataset, and every borrowed method or number.
-- [ ] Compile from scratch and inspect the final PDF.
-
-Recommended report sections:
-
-1. Introduction and problem formulation
-2. Related work
-3. Dataset and preprocessing
-4. Method and system design
-5. Experimental setup
-6. Results and prompt ablation
-7. Qualitative and failure analysis
-8. Interactive system and HCI analysis
-9. Limitations and ethical considerations
-10. Conclusion
-
-**Exit condition:** the PDF builds cleanly and every major claim points to a result, figure, citation, or explicit limitation.
-
-### Phase 9: Five-minute presentation
-
-Use six slides:
-
-1. **Problem and contribution:** task, relevance, and what we actually did.
-2. **Dataset and evaluation:** split, preprocessing, prompts, and metrics.
-3. **Method:** one pipeline diagram with PointNet++, CLIP, and point-level output.
-4. **Experimental setup:** pretrained checkpoint, controlled prompt comparison, and baseline/reference.
-5. **Results:** one compact table plus the meaning of the result.
-6. **Qualitative analysis and demo:** successes, failures, interface, limitations, and takeaway.
-
-Presentation rules:
-
-- [ ] Rehearse to 5:00, never beyond 5:30.
-- [ ] Assign one speaker per section if using multiple speakers.
-- [ ] Do not spend time on generic background.
-- [ ] State `pretrained` clearly.
-- [ ] Explain results rather than reading values.
-- [ ] Use the recorded demo during the presentation unless live inference is known to be reliable and fast.
-- [ ] Keep backup slides for architecture detail, metric definitions, and extra examples.
-
-**Exit condition:** the full talk and recorded demo finish within five minutes.
-
-### Phase 10: Repository and submission
-
-- [ ] Replace the placeholder README with setup, data, checkpoint, inference, evaluation, demo, and citation instructions.
-- [ ] Pin dependency versions.
-- [ ] Remove secrets, personal paths, temporary data, and large files.
-- [ ] Include licenses and attribution for reused code.
-- [ ] Verify commands from a clean clone or fresh environment.
-- [ ] Set the GitHub repository to public.
-- [ ] Verify every repository and Drive link in an incognito window.
-- [ ] Submit the report before **20 September 2026, 11:59 PM**.
-- [ ] Preserve time for the presentation on **21 September 2026**.
-
-**Exit condition:** a reviewer can access the public repository, understand what is ours, reproduce the documented path, and open the final report.
-
-## 14. Forty-Eight-Hour Schedule
-
-### Hours 0-4: Establish a working result
-
-- Freeze scope and claims.
-- Configure environment, data, and checkpoint.
-- Run pretrained inference on one sample.
-- Capture exact commands and blockers.
-
-### Hours 4-10: Build the core pipeline
-
-- Make inference reproducible.
-- Export predictions and visualizations.
-- Begin the evaluation harness.
-- Create report and slide skeletons.
-
-### Hours 10-18: Generate results
-
-- Complete metric validation.
-- Run canonical-prompt evaluation.
-- Run the prompt-phrasing experiment.
-- Save results immediately in machine-readable files.
-
-### Hours 18-26: Build and analyze the interface
-
-- Implement the minimum interactive viewer.
-- Select success and failure cases.
-- Complete HCI scenarios, task analysis, and traceability.
-- Record a first demo as soon as the interface works.
-
-### Hours 26-36: Write and integrate
-
-- Finish the report around actual results.
-- Create the architecture diagram and result figures.
-- Build the six presentation slides.
-- Complete README and reproducibility instructions.
-
-### Hours 36-42: Verify and freeze
-
-- Run the documented workflow from a clean start.
-- Compile and proofread the report.
-- Verify citations, numbers, figures, repository visibility, and links.
+- Complete Steps 15 and 16.
+- Finish the repository, reports, figures, and slides.
 - Record the final demo.
-- Freeze result-changing code.
 
-### Hours 42-48: Submit and rehearse
+### Hours 42-48
 
-- Submit early.
-- Rehearse the five-minute presentation repeatedly.
-- Prepare local copies of slides, report, video, and key outputs.
-- Use remaining time only for presentation-blocking fixes.
+- Complete Step 17.
+- Freeze and submit.
+- Rehearse the PR presentation repeatedly.
 
-## 15. Go/No-Go Gates
+## 6. Go/No-Go Rules
 
-### Gate 1: Hour 4
+- **Hour 4:** if no sample loads, switch environment or compute platform.
+- **Hour 8:** if pretrained inference does not work, stop interface and fine-tuning work until it does.
+- **Hour 12:** if the metric remains unclear, report only a verified subset mIoU and document it precisely.
+- **Hour 18:** if fine-tuning is broken or too slow, stop it and retain the experiment as an attempted modification; finish the pretrained prompt analysis.
+- **Hour 24:** if the live interface is unreliable, use cached predictions.
+- **Hour 30:** if participant evaluation is infeasible, perform the expert walkthrough and disclose the limitation.
+- **Hour 36:** freeze experiments. Finish reports, repository, demo, and slides.
 
-**Required:** one nonempty pretrained prediction.
+## 7. Academic Honesty Rules
 
-If missing, stop all interface and writing refinements. Switch environment or use the simplest known compatible inference path.
+- Clearly label results as **ours**, **released-checkpoint evaluation**, or **cited from OpenAD**.
+- State that our fine-tuning starts from pretrained OpenAD weights.
+- Do not call continued or prompt-augmented fine-tuning training from scratch.
+- Do not use validation or test examples, synonyms, or held-out prompts for training.
+- Report negative results and protocol deviations honestly.
+- Cite OpenAD, PointNet++, CLIP, 3D AffordanceNet, reused code, metrics, and HCI frameworks.
+- Keep simulated-data disclosure prominent wherever simulated HCI data appears.
+- Never describe simulated participants or responses as real.
 
-### Gate 2: Hour 14
+## 8. Final Project Claim
 
-**Required:** a verified evaluation path on at least one sample.
+> We reproduced and evaluated a pretrained OpenAD pipeline for language-guided 3D affordance detection, applied lightweight prompt-augmented fine-tuning to improve robustness to natural phrasing, compared the original and adapted models on canonical and held-out prompts, analyzed successes and failures, and built a human-centered interface for inspecting and refining model predictions. We do not claim a new architecture or state-of-the-art model.
 
-If missing, narrow to a documented subset and one trustworthy metric. Do not add new metrics or models.
+## 9. Deliverables
 
-### Gate 3: Hour 24
+### Pattern Recognition Deliverables
 
-**Required:** a results table, qualitative figures, and a minimal demo path.
+- Public GitHub repository with setup and reproduction instructions.
+- IEEE-style report, unless the team deliberately chooses the permitted Distill-style alternative.
+- Five-minute presentation, with a hard maximum of five minutes and thirty seconds.
+- Six-slide main deck plus backup slides.
+- Architecture/pipeline diagram.
+- Documented dataset, preprocessing, split, and metric protocol.
+- Reproducible pretrained OpenAD baseline.
+- Prompt-augmented fine-tuned checkpoint and training configuration, or an honest failed-experiment account if the bounded run fails.
+- Fair pretrained-versus-fine-tuned results table.
+- Canonical-versus-natural-versus-held-out prompt comparison.
+- At least one verified quantitative metric, with mIoU as the priority.
+- Training curves and per-affordance results where available.
+- At least six qualitative examples covering successes, partial results, and failures.
+- Short recorded system demonstration.
+- Clear attribution of pretrained, reproduced, fine-tuned, and cited results.
 
-If missing, remove all stretch work. Use a prepared result gallery if interactive inference is unreliable.
+### HCI Deliverables
 
-### Gate 4: Hour 36
-
-**Required:** complete report draft, slides, README, and recorded demo.
-
-After this gate, make only correctness, reproducibility, and presentation fixes.
-
-## 16. Risks and Fallbacks
-
-| Risk | Early signal | Response |
-|---|---|---|
-| CUDA/package incompatibility | Reference inference fails in the first hours | Move to a known Colab/Kaggle image or CPU-compatible inference; do not train |
-| Dataset/checkpoint download delay | Assets are unavailable by hour 2 | Download the minimum full-shape assets and checkpoint; work on report/demo scaffolding in parallel |
-| Official metrics are unclear | Results disagree with reference behavior | Read evaluator code, report only verified metrics, and document protocol precisely |
-| Full evaluation is too slow | Estimated run exceeds available compute | Freeze a predetermined subset and label it as subset evaluation |
-| Prompt text is constrained by code | Arbitrary sentences cannot be passed cleanly | Implement the smallest text-encoding change consistent with the reference pipeline; otherwise compare verified label templates and disclose the constraint |
-| Interactive GPU inference is slow | Each query takes too long for a demo | Cache predictions for selected samples/prompts and use a recorded demonstration |
-| Results are weaker than published values | Reproduced score is low | Report it honestly, check split/protocol compatibility, and focus analysis on causes and limitations |
-| No time for real HCI participants | Recruitment has not begun | Use scenario walkthroughs and heuristic/formative analysis; label simulated evidence explicitly |
-| Team integration fails | Outputs use different formats or paths | Agree on CSV/JSON/PLY contracts early and appoint one integration owner |
-
-## 17. Team Work Split
-
-Assign names based on actual team size. One person may own multiple roles.
-
-- **Inference owner:** environment, checkpoint, reference inference, reproducible commands.
-- **Evaluation owner:** split validation, metrics, prompt experiment, result tables.
-- **Interface owner:** point-cloud rendering, query flow, comparison states, demo recording.
-- **PR writing owner:** method, experimental setup, results, architecture diagram, slides.
-- **HCI owner:** requirements, scenarios, task analysis, traceability, trust and usability analysis.
-- **Integration owner:** repository structure, README, citations, final builds, submission checklist.
-
-Coordination rules:
-
-- Use one shared result schema and sample naming convention.
-- Never overwrite raw predictions; generate derived tables and figures separately.
-- Commit small working changes with descriptive messages.
-- Communicate blockers immediately.
-- Only the integration owner changes final report and slide structure during the final six hours.
-
-## 18. Definition of Done
-
-The project is complete when all of the following are true:
-
-- [ ] A documented command runs pretrained OpenAD inference.
-- [ ] At least one verified metric is reported on a clearly defined evaluation set.
-- [ ] Canonical and alternative prompt conditions are compared fairly.
-- [ ] Raw and summarized results are saved.
-- [ ] Successful, ambiguous, and failed predictions are shown.
-- [ ] The interactive demo works or a recorded fallback proves the workflow.
-- [ ] The report accurately explains the architecture and our use of pretrained weights.
-- [ ] The HCI analysis concerns the same implemented system.
-- [ ] All simulated or non-human evidence is labeled honestly.
-- [ ] The public repository contains setup and reproduction instructions.
-- [ ] The IEEE PDF is submitted by the deadline.
-- [ ] The presentation fits within 5 minutes and 30 seconds.
-
-## 19. Final Claim Template
-
-Use language close to this in the report and presentation:
-
-> We implemented and evaluated a pretrained open-vocabulary 3D affordance detection pipeline based on OpenAD. We examined how semantically equivalent natural-language prompts affect point-level affordance predictions, analyzed representative successes and failures, and developed an interactive interface that supports query refinement and inspection of model outputs. We do not claim a new model architecture or newly trained state-of-the-art weights.
-
-## 20. Immediate Next Actions
-
-Do these in order:
-
-1. Obtain the official dataset and pretrained PointNet++ full-shape checkpoint.
-2. Confirm one inference result using `_ref_openad/test_open_vocab.py`.
-3. Record the working environment and exact command.
-4. Inspect the official evaluator and reproduce one metric on a tiny sample.
-5. Freeze the evaluation subset and prompt list.
-6. Run canonical and alternative prompts.
-7. Build the interactive viewer around saved predictions first, then add live inference if reliable.
-8. Write the report and slides around the results that actually exist.
-
+- ACM `acmart` report source (`.tex`) and compiled PDF.
+- The same working interactive affordance-detection system used for the PR demo.
+- User and stakeholder analysis.
+- Functional and non-functional requirements.
+- Two personas.
+- Three scenarios covering easy, moderate, and difficult use.
+- Hierarchical task analysis.
+- Affinity diagram or documented thematic grouping.
+- Requirements-to-goals traceability matrix with approximately 8 to 12 entries.
+- Wireframes, interaction flow, and design rationale.
+- Human-Centered AI analysis covering explainability, human control, uncertainty, trust, transparency, and accessibility.
+- System architecture and feature-to-requirement mapping.
+- Formative usability evaluation with real participants where feasible, or a clearly disclosed expert-walkthrough fallback.
+- Evaluation tasks, procedure, metrics, results, discussion, design implications, and limitations.
+- Prototype demonstration video.
+- Shared Google Drive folder containing the reports, video, papers, dataset/software links, and GitHub link, with access verified.
+- Prominent simulated-data disclosure in every relevant section if simulated evidence is included.
