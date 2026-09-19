@@ -13,6 +13,7 @@ h5py
 transforms3d
 scikit-learn
 gorilla-core
+opencv-python-headless   # required by gorilla-core (imports cv2) but undeclared
 git+https://github.com/openai/CLIP.git
 
 # Our additions: config, data handling, visualization, demo, tests
@@ -22,4 +23,5 @@ matplotlib
 plotly
 trimesh
 gradio
+huggingface_hub<1.0      # gradio 4.x needs HfFolder, removed in hub 1.0
 pytest

@@ -46,22 +46,42 @@ def _working_dir(path: Path):
 def load_config(config_path: str | Path, data_root: str | Path | None = None) -> Any:
     """Load an OpenAD config and repoint its data paths at our locations.
 
-    OpenAD config files run ``from utils import ...`` and ``os.makedirs(work_dir)``
-    with paths relative to the working directory, so we load them from inside the
-    checkout (keeping any generated ``log/`` there, which is gitignored).
+    We import the config module directly from its path rather than using
+    ``gorilla.config.Config.fromfile``, which copies the file to an already-open
+    ``NamedTemporaryFile`` and fails on Windows. OpenAD config files run
+    ``from utils import ...`` and ``os.makedirs(work_dir)`` with paths relative to
+    the working directory, so we execute them from inside the checkout (any
+    generated ``log/`` stays there, and it is gitignored).
     """
+    import importlib.util
+    import inspect
+    import types
+
     ensure_openad_importable()
     from gorilla.config import Config
 
     config_path = Path(config_path).resolve()
     with _working_dir(REF_OPENAD):
-        cfg = Config.fromfile(str(config_path))
+        spec = importlib.util.spec_from_file_location("openad_config", str(config_path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+    # Keep only config values; drop imported modules, functions, and classes.
+    cfg_dict = {
+        name: value
+        for name, value in vars(module).items()
+        if not name.startswith("__")
+        and not isinstance(value, types.ModuleType)
+        and not (inspect.isclass(value) or inspect.isroutine(value))
+    }
 
     data_root = Path(data_root) if data_root else DATA_DIR
-    cfg.data.data_root = str(data_root)
-    if getattr(cfg, "training_cfg", None) and cfg.training_cfg.get("weights_dir", None):
-        cfg.training_cfg.weights_dir = str(data_root / "full_shape_weights.npy")
-    return cfg
+    if "data" in cfg_dict:
+        cfg_dict["data"]["data_root"] = str(data_root)
+    if cfg_dict.get("training_cfg", {}).get("weights_dir"):
+        cfg_dict["training_cfg"]["weights_dir"] = str(data_root / "full_shape_weights.npy")
+
+    return Config(cfg_dict)
 
 
 def load_checkpoint_into(model, checkpoint_path: str | Path) -> None:
