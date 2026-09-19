@@ -1,0 +1,30 @@
+# Class-disjoint (seen/unseen affordance) evaluation split.
+#
+# This answers the PR proposal's promised "headline number": the seen/unseen
+# gap that shows how well open-vocabulary transfer actually works. See
+# docs/slides/OV_3D_Affordance_Detection (1).pdf, slide 4.
+#
+# This is an EVALUATION-ONLY split, not a training split: fine-tuning
+# (src/training/finetune.py) always supervises every class's spatial region
+# using the full canonical vocabulary each step, and only rephrases the
+# `studied_affordances` listed in configs/prompts/prompt_sets.yaml. There is
+# no geometry holdout. "Unseen" here means an affordance the model is never
+# *prompted toward* by name during fine-tuning (canonical or paraphrase) --
+# evaluated purely on the frozen CLIP text encoder's zero-shot transfer.
+# Report this framing explicitly; do not describe it as a held-out-geometry
+# split.
+#
+# Chosen to spread across concept types (tool-use, perceptual, wearable,
+# mechanism, contact) and to stay disjoint from prompt_sets.yaml's
+# studied_affordances (grasp, contain, sittable, pourable, cut) so the two
+# splits never collide.
+unseen:
+  - stab
+  - listen
+  - wear
+  - openable
+  - press
+
+# Everything else in the canonical vocabulary (configs/prompts/vocabulary.yaml)
+# except `none` (background) is treated as "seen". Computed at load time from
+# vocabulary.yaml, not duplicated here, so the two files can't drift apart.
