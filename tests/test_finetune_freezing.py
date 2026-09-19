@@ -60,4 +60,4 @@ def test_unknown_group_raises():
 
 
 def test_groups_are_documented():
-    assert set(TRAINABLE_GROUPS) == {"head", "head_fp1", "all"}
+    assert set(TRAINABLE_GROUPS) == {"head", "head_fp1", "head_fp1_fp2", "decoder", "all"}
