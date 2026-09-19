@@ -72,6 +72,13 @@ def load_vocabulary(path: Path | None = None) -> Vocabulary:
     return Vocabulary(canonical=tuple(data["canonical"]))
 
 
+def load_openad_synonyms(path: Path | None = None) -> tuple[str, ...]:
+    """Load OpenAD's index-aligned open-vocab test synonyms (for reproduction)."""
+    path = Path(path) if path else PROMPTS_DIR / "vocabulary.yaml"
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return tuple(data.get("openad_val_synonyms", []))
+
+
 def load_prompt_sets(
     path: Path | None = None, vocabulary: Vocabulary | None = None
 ) -> PromptSets:
