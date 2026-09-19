@@ -153,7 +153,8 @@ def finetune(
         record["history"].append(epoch_record)
         print(
             f"epoch {epoch}/{epochs}  loss={epoch_record['train_loss']:.4f}  "
-            f"val_mIoU={val_miou * 100:.2f}  ({epoch_record['seconds']}s)"
+            f"val_mIoU={val_miou * 100:.2f}  ({epoch_record['seconds']}s)",
+            flush=True,  # show progress live instead of buffering to exit
         )
 
         if val_miou > best_miou:
