@@ -1,0 +1,25 @@
+# Python dependencies for this project (the interactive affordance-detection system).
+#
+# NOTE ON PYTORCH: install torch/torchvision separately FIRST, matching your CUDA,
+# because the correct build depends on your GPU. For an RTX 4060 (Ada, sm_89) use a
+# current CUDA 12.x wheel, e.g.:
+#     pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+# Do NOT follow OpenAD's pinned pytorch-cuda=11.6 — it predates sm_89.
+
+# OpenAD runtime dependencies (kept in sync with _ref_openad/requirements.txt)
+numpy
+tqdm
+h5py
+transforms3d
+scikit-learn
+gorilla-core
+git+https://github.com/openai/CLIP.git
+
+# Our additions: config, data handling, visualization, demo, tests
+pyyaml
+pandas
+matplotlib
+plotly
+trimesh
+gradio
+pytest

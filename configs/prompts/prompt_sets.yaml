@@ -1,0 +1,69 @@
+# Frozen prompt sets for the prompt-sensitivity experiment and prompt-augmented
+# fine-tuning.
+#
+# For each studied affordance we give paraphrases in three FORMS
+# (label / question / description) split into two disjoint groups:
+#
+#   finetune : phrases that MAY be used as language supervision during training.
+#   heldout  : phrases reserved EXCLUSIVELY for evaluation.
+#
+# Rules (enforced by tests/test_prompts.py):
+#   * `finetune` and `heldout` phrases never overlap (no evaluation leakage).
+#   * Studied affordances must exist in configs/prompts/vocabulary.yaml.
+#   * This file is FROZEN before fine-tuning starts; do not add held-out phrases
+#     after seeing results.
+#
+# Non-studied affordances always use their canonical label from vocabulary.yaml.
+
+studied_affordances: [grasp, contain, sittable, pourable, cut]
+
+prompts:
+  grasp:
+    finetune:
+      label: [grasp, grip, hold]
+      question: ["Where can I grasp this object?", "Which part should I hold to pick it up?"]
+      description: ["the part used for holding", "the region you grip to lift it"]
+    heldout:
+      label: [grab, clutch]
+      question: ["Where should I take hold of this?"]
+      description: ["the surface meant for gripping by hand"]
+
+  contain:
+    finetune:
+      label: [contain, store, hold contents]
+      question: ["Where can this object contain something?", "Which part holds the contents?"]
+      description: ["the hollow region that holds contents", "the inside space that stores things"]
+    heldout:
+      label: [accommodate, enclose]
+      question: ["Where does it keep things inside?"]
+      description: ["the cavity that carries material inside"]
+
+  sittable:
+    finetune:
+      label: [sittable, sit, seat]
+      question: ["Where can I sit on this object?", "Which part can I sit on?"]
+      description: ["the surface you sit on", "the flat area meant for sitting"]
+    heldout:
+      label: [take a seat, be seated]
+      question: ["Where would a person sit down here?"]
+      description: ["the part that supports a seated person"]
+
+  pourable:
+    finetune:
+      label: [pourable, pour, spout]
+      question: ["Where can I pour from this object?", "Which part do I pour liquid out of?"]
+      description: ["the opening liquid is poured from", "the edge used to pour out contents"]
+    heldout:
+      label: [decant, tip out]
+      question: ["Where does the liquid come out when tipped?"]
+      description: ["the lip through which contents flow out"]
+
+  cut:
+    finetune:
+      label: [cut, cutting, blade]
+      question: ["Where can I cut with this object?", "Which part is used for cutting?"]
+      description: ["the sharp edge used to cut", "the blade region that slices"]
+    heldout:
+      label: [slice, sever]
+      question: ["Where is the part that cuts things?"]
+      description: ["the honed edge intended for slicing"]

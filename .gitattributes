@@ -1,0 +1,17 @@
+# Normalize line endings: text files use LF in the repository.
+* text=auto eol=lf
+
+# Shell scripts must stay LF so they run on Linux (Kaggle/Colab).
+*.sh text eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+
+# Binaries: never normalize.
+*.png binary
+*.jpg binary
+*.ply binary
+*.pkl binary
+*.npy binary
+*.pth binary
+*.t7 binary
