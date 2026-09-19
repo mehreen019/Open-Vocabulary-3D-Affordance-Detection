@@ -39,12 +39,42 @@ pip install -r requirements.txt
 
 ### Data and checkpoint (not committed)
 
-Download from the official OpenAD Google Drive links in `_ref_openad/README.md`:
+These are downloaded manually from OpenAD's official Google Drive (also linked in
+`_ref_openad/README.md`). They are large and stay out of Git.
 
-- **Dataset**: place the `full_shape_*_data.pkl` files (and `full_shape_weights.npy`)
-  under `data/`, or set `OPENAD_DATA=/path/to/data`.
-- **Pretrained checkpoint**: any location; pass it with `--checkpoint` or set
-  `OPENAD_CHECKPOINT=/path/to/checkpoint`.
+**1. Dataset** -- https://drive.google.com/drive/folders/1f-_V_iA6POMYlBe2byuplJfdKmV72BHu
+
+Place the full-shape files **directly** inside `data/` (or set
+`OPENAD_DATA=/path/to/data`):
+
+```
+data/
+  full_shape_train_data.pkl
+  full_shape_val_data.pkl
+  full_shape_weights.npy      # class weights, used by the fine-tuning loss
+```
+
+If the download is a zip or a nested folder, unzip so the `.pkl` files sit
+directly in `data/` (not `data/full_shape/...`).
+
+**2. Pretrained checkpoint** -- https://drive.google.com/drive/folders/17895vwgGHfIlDj3q0a7BOg6cotH5RTjm
+
+Download the PointNet++ full-shape checkpoint (`.t7` or `.pth`) into
+`results/checkpoints/`, or pass it with `--checkpoint` / set
+`OPENAD_CHECKPOINT=/path/to/checkpoint`.
+
+> Tip: use the folder's **Download** button (it zips everything) rather than
+> grabbing files one by one. For large files, click through Google's
+> "can't scan for viruses" warning.
+
+### Verify the setup
+
+```bash
+python -m src.evaluation.run_eval --checkpoint results/checkpoints/<name>.t7 --condition canonical
+```
+
+An mIoU around 12-15 means the reproduction works. (Do not compare against the
+40+ closed-set numbers -- that is a different regime.)
 
 ## Usage
 
