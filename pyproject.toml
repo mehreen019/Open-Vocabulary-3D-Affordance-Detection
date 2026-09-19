@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+# Only collect our tests; never descend into the OpenAD checkout (which ships its
+# own `test_*.py` files that require the full OpenAD environment).
+testpaths = ["tests"]
+norecursedirs = ["_ref_openad", "local_docs", "results", "data", "docs"]
