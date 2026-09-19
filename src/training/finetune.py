@@ -34,9 +34,11 @@ DEFAULT_CONFIG = REF_OPENAD / "config" / "openad_pn2" / "full_shape_cfg.py"
 #: Which parameters to train, keyed by top-level module name. ``None`` = all.
 #: (The CLIP encoder is a module-level global, so it never appears here and stays frozen.)
 TRAINABLE_GROUPS: dict[str, tuple[str, ...] | None] = {
-    "head": ("conv1", "bn1", "logit_scale"),  # alignment head only
-    "head_fp1": ("conv1", "bn1", "logit_scale", "fp1"),  # + last feature-propagation
-    "all": None,  # whole PointNet++ backbone + head
+    "head": ("conv1", "bn1", "logit_scale"),  # alignment head only (~67k)
+    "head_fp1": ("conv1", "bn1", "logit_scale", "fp1"),  # + last feature-propagation (~101k)
+    "head_fp1_fp2": ("conv1", "bn1", "logit_scale", "fp1", "fp2"),  # ~283k
+    "decoder": ("conv1", "bn1", "logit_scale", "fp1", "fp2", "fp3"),  # whole decoder, encoder frozen (~743k)
+    "all": None,  # decoder + geometric encoder (sa1/sa2/sa3) (~1.78M)
 }
 
 
