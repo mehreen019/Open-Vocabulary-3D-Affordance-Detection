@@ -1,0 +1,52 @@
+# Canonical affordance vocabulary.
+#
+# ORDER MATTERS: the dataset returns per-point integer labels that index into
+# this list, so the order here must match OpenAD's `train_affordance` exactly.
+# Taken from _ref_openad/config/openad_pn2/full_shape_open_vocab_cfg.py.
+# VERIFY against the dataset loader once the data is downloaded (see plan Step 4)
+# before quoting anything in the reports.
+#
+# `none` is the background/no-affordance class (last index).
+canonical:
+  - grasp
+  - contain
+  - lift
+  - openable
+  - layable
+  - sittable
+  - support
+  - wrap_grasp
+  - pourable
+  - move
+  - displaY        # spelling kept exactly as upstream (do not "fix" it)
+  - pushable
+  - pull
+  - listen
+  - wear
+  - press
+  - cut
+  - stab
+  - none
+
+# OpenAD's open-vocabulary test synonyms (index-aligned with `canonical`), kept
+# for reference / reproduction of their reported open-vocab number.
+openad_val_synonyms:
+  - grab
+  - accommodate
+  - raise
+  - unlock
+  - rest
+  - take a seat
+  - bear
+  - wrap
+  - pour
+  - reposition
+  - demonstrate
+  - push
+  - drag
+  - hear
+  - clothe
+  - thumb
+  - slice
+  - jab
+  - none
