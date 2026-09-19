@@ -18,6 +18,7 @@ git+https://github.com/openai/CLIP.git
 # Our additions: config, data handling, visualization, demo, tests
 pyyaml
 pandas
+matplotlib
 plotly
 trimesh
 gradio
