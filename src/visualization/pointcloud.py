@@ -78,6 +78,7 @@ def render_comparison(
     cmap: str = DEFAULT_CMAP,
     vmin: float = 0.0,
     vmax: float = 1.0,
+    suptitle: str | None = None,
 ) -> Path | None:
     """Render several score maps of the same object side by side (shared scale).
 
@@ -89,11 +90,13 @@ def render_comparison(
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    fig = plt.figure(figsize=(4 * len(panels), 4))
+    fig = plt.figure(figsize=(4 * len(panels), 4.2))
     handle = None
     for i, (title, scores) in enumerate(panels, start=1):
         ax = fig.add_subplot(1, len(panels), i, projection="3d")
         handle = _scatter(ax, points, scores, title, cmap, vmin, vmax)
+    if suptitle:
+        fig.suptitle(suptitle, fontsize=11)
     if handle is not None:
         fig.colorbar(handle, ax=fig.axes, shrink=0.6, pad=0.02)
     return _save_or_show(fig, path)
