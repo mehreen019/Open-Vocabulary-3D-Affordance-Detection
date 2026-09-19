@@ -1,1 +1,41 @@
+# --- Reference upstream (cloned by scripts/setup_openad, never vendored) ---
+/_ref_openad/
+
+# --- Course/reference material ---
 /local_docs/
+
+# --- Large assets: datasets & downloaded checkpoints (never committed) ---
+/data/
+*.pkl
+*.h5
+*.t7
+*.pth
+*.ckpt
+*.npy
+
+# --- Generated experiment outputs ---
+/results/metrics/*
+/results/figures/*
+/results/predictions/*
+/results/checkpoints/*
+!/results/**/.gitkeep
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# --- Tooling / OS / IDE ---
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
