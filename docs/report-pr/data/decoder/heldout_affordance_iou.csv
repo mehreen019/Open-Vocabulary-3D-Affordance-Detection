@@ -1,0 +1,11 @@
+affordance,condition,pretrained,finetuned
+grasp,question_heldout,0.0000,0.2153
+grasp,description_heldout,0.0031,0.3929
+contain,question_heldout,0.0005,0.4242
+contain,description_heldout,0.0023,0.3635
+sittable,question_heldout,0.0200,0.5833
+sittable,description_heldout,0.2138,0.5813
+pourable,question_heldout,0.0000,0.4250
+pourable,description_heldout,0.0000,0.3271
+cut,question_heldout,0.4177,0.5210
+cut,description_heldout,0.3826,0.5289

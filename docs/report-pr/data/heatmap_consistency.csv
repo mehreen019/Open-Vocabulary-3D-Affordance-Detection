@@ -1,0 +1,16 @@
+affordance,form_a,form_b,correlation,positive_iou
+grasp,canonical,question,0.7096,0.0000
+grasp,canonical,description,0.7656,0.0000
+grasp,question,description,0.8612,nan
+contain,canonical,question,0.5971,0.0000
+contain,canonical,description,0.6516,0.0000
+contain,question,description,0.8710,nan
+sittable,canonical,question,0.8266,nan
+sittable,canonical,description,0.7356,nan
+sittable,question,description,0.8426,nan
+pourable,canonical,question,0.7342,0.0000
+pourable,canonical,description,0.6746,0.0000
+pourable,question,description,0.8632,nan
+cut,canonical,question,0.8652,nan
+cut,canonical,description,0.8869,nan
+cut,question,description,0.8890,nan

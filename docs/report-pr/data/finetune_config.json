@@ -1,0 +1,12 @@
+{
+  "tag": "finetuned",
+  "group": "head",
+  "trainable_parameters": 67073,
+  "epochs": 5,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "batch_size": 16,
+  "augment": true,
+  "seed": 1,
+  "best_val_miou": 0.42220240669005493
+}

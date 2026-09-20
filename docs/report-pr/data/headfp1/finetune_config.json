@@ -1,0 +1,12 @@
+{
+  "tag": "finetuned_headfp1",
+  "group": "head_fp1",
+  "trainable_parameters": 101377,
+  "epochs": 8,
+  "lr": 0.0001,
+  "weight_decay": 0.0001,
+  "batch_size": 16,
+  "augment": true,
+  "seed": 1,
+  "best_val_miou": 0.4245707286796534
+}

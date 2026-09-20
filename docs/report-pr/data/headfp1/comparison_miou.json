@@ -1,0 +1,16 @@
+{
+  "pretrained": {
+    "canonical": 0.4128063477016089,
+    "question_finetune": 0.29036944479827015,
+    "question_heldout": 0.2927208240227219,
+    "description_finetune": 0.29642620636694494,
+    "description_heldout": 0.30401678193181414
+  },
+  "finetuned": {
+    "canonical": 0.4202414711594901,
+    "question_finetune": 0.4211509154848391,
+    "question_heldout": 0.40482303129824504,
+    "description_finetune": 0.4236747711969221,
+    "description_heldout": 0.4087862604556385
+  }
+}

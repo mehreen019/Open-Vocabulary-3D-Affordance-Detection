@@ -1,0 +1,6 @@
+condition,pretrained,finetuned
+canonical,41.44,41.93
+question_finetune,29.04,41.81
+question_heldout,29.22,39.75
+description_finetune,29.53,41.99
+description_heldout,30.22,40.27

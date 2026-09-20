@@ -1,0 +1,20 @@
+class,query,iou
+grasp,grab,0.017440
+contain,accommodate,0.001867
+lift,raise,0.000000
+openable,unlock,0.048440
+layable,rest,0.207716
+sittable,take a seat,0.261854
+support,bear,0.000000
+wrap_grasp,wrap,0.183506
+pourable,pour,0.251875
+move,reposition,0.000009
+displaY,demonstrate,0.049412
+pushable,push,0.135785
+pull,drag,0.000000
+listen,hear,0.495058
+wear,clothe,0.078854
+press,thumb,0.000000
+cut,slice,0.550146
+stab,jab,0.000000
+none,none,0.453807
