@@ -40,31 +40,31 @@
 \maketitle
 
 % 1. PROBLEM
-\begin{frame}{Problem \& contribution}
+\begin{frame}[shrink=12]{Problem \& contribution}
   \textbf{Affordance detection:} \emph{where} on a 3D object can I act
   (grasp a handle, sit on a seat, cut with a blade)?
 
-  \medskip
+  \smallskip
   \textbf{OpenAD} handles this as an open-vocabulary task. It matches each point's
   PointNet++ feature to a query embedding from \emph{frozen CLIP}. However, it is trained
   using only \emph{single-word} queries.
 
-  \medskip
-  \alert{Users may not say ``grasp.'' They may ask, ``Where can I grasp this object?''}
-  How well does the model handle this change in wording?
+  \smallskip
+  \alert{Users may not say ``grasp''---they might ask ``Where can I grasp this object?''
+  How well does the model handle that change in wording?}
 
-  \medskip
-  \textbf{Our approach} uses pretrained weights and introduces no new architecture:
+  \smallskip
+  \textbf{Our approach} (pretrained weights, no new architecture):
   \begin{itemize}
     \item reproduce OpenAD and measure its sensitivity to phrasing;
     \item improve its robustness with lightweight prompt-augmented fine-tuning;
     \item provide an interactive demonstration.
   \end{itemize}
 
+  \smallskip
   \begin{block}{Headline}
     Rephrasing costs \up{$\sim$12 mIoU}. Fine-tuning \up{101k params (5.7\%)} recovers
-    \up{$>$90\%} of that loss on \emph{unseen} wordings while preserving performance on
-    canonical words.
+    \up{$>$90\%} on \emph{unseen} wordings, with canonical performance preserved.
   \end{block}
 \end{frame}
 
@@ -154,7 +154,7 @@
     \textbf{Implementation}
     \begin{itemize}\small
       \item PyTorch 2.5 / CUDA 12.1, 1$\times$ RTX 4060
-      \item $\sim$14 min/epoch; 16 unit tests
+      \item 16 GPU-free unit tests
     \end{itemize}
   \end{columns}
 \end{frame}
