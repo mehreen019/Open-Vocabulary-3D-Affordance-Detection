@@ -2,7 +2,7 @@
 
 - `main.tex`: report source (IEEEtran, `IEEEtran.cls` copied from the IEEE conference template).
 - `main.pdf`: compiled report.
-- `data/`: metric files copied from the experiment outputs (`results/metrics/`), the only inputs of the figures and tables. `data/headfp1/` holds the reported model (head + last propagation layer); the files directly in `data/` for the fine-tuned model are the head-only ablation.
+- `data/`: metric files copied from the experiment outputs (`results/metrics/`), the only inputs of the figures and tables. `data/headfp1/` holds the reported model (head + last propagation layer), including its OpenAD synonym evaluation (`openad_synonyms_*`, Section VI-F); the files directly in `data/` for the fine-tuned model are the head-only ablation.
 - `data/decoder/`: the third rung of the capacity ladder (head + fp1-fp3, 743,041 parameters): comparison tables, per-affordance held-out IoU, training history and configuration.
 - `data/baselines/`: the query-independent floors (majority class and random class) with per-class IoU.
 - `figures/raw/`: before/after renderings written by `python -m src.visualization.qualitative`.
