@@ -79,7 +79,7 @@ Our modification is entirely in the training procedure. At each training step, w
 
 ### Understand first
 
-The majority and random models are not serious competitors. They establish the bottom of the metric scale. The pretrained checkpoint is the true baseline. The capacity ladder tests whether more trainable parameters produce more improvement.
+The released pretrained checkpoint is the true baseline. The capacity ladder tests whether more trainable parameters produce more improvement.
 
 The three capacities are nested:
 
@@ -101,15 +101,13 @@ For a fair comparison, the pretrained and fine-tuned models are evaluated in the
 
 Before trusting new experiments, you must show that your code can reproduce a known result. The most important match is the open-vocabulary result: 14.40 mIoU from your evaluation compared with 14.37 in the paper.
 
-The majority baseline explains why accuracy is misleading. It predicts `none` everywhere. Since background is common, it achieves 43.04 percent accuracy, but it fails every affordance class and receives only 2.27 mIoU.
-
 Closed-set means using the original class words. Open-vocabulary here means replacing them with the synonym list used by OpenAD.
 
 ### Final speech
 
 Before studying phrasing, we verified that our evaluation pipeline reproduces OpenAD. In the open-vocabulary setting, we obtain 14.40 mIoU compared with the reported 14.37. Point accuracy and mean class accuracy also match closely.
 
-The simple baselines show why mIoU is the appropriate metric. Predicting the majority class everywhere gives 43 percent point accuracy because the dataset contains many background points, but its mIoU is only 2.27. The close reproduction gives us confidence that later differences come from the query wording and fine-tuning rather than an incompatible evaluator.
+The close reproduction gives us confidence that later differences come from the query wording and fine-tuning rather than an incompatible evaluator.
 
 ## Slide 7: Phrasing sensitivity
 

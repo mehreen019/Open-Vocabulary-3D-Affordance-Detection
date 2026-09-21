@@ -9,6 +9,7 @@
 \renewcommand{\familydefault}{\sfdefault}
 
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{tikz}
@@ -63,8 +64,8 @@
 
   \smallskip
   \begin{block}{Headline}
-    Rephrasing costs \up{$\sim$12 mIoU}. Fine-tuning \up{101k params (5.7\%)} recovers
-    \up{$>$90\%} on \emph{unseen} wordings, with canonical performance preserved.
+    Rephrasing costs \up{$\sim$12 mIoU}. Fine-tuning \up{101k params (5.7\%)} improves
+    held-out questions by \up{11.2} and descriptions by \up{10.5 mIoU}.
   \end{block}
 \end{frame}
 
@@ -169,8 +170,7 @@
     Closed-set & OpenAD (cited) & 42.00 & 69.03 & 67.31 \\
                & \up{ours} & 41.25 & 68.51 & 66.73 \\
     \midrule
-    Open-vocab & ZSLPC (cited) & 9.97 & 40.13 & 18.70 \\
-               & OpenAD (cited) & 14.37 & 46.31 & 19.51 \\
+    Open-vocab & OpenAD (cited) & 14.37 & 46.31 & 19.51 \\
                & \up{ours} & \up{14.40} & 46.33 & 19.63 \\
     \midrule
     Floor & majority (\texttt{none}) & 2.27 & 43.04 & 5.26 \\
@@ -204,15 +204,34 @@
     \end{tabular}
     \column{0.58\textwidth}
     \footnotesize
+    \begin{block}{Same intent, different wording}
+      \begin{tabular}{@{}>{\bfseries}l@{\hspace{4pt}}p{0.72\linewidth}@{}}
+        Canonical & \texttt{grasp} \\
+        Question & ``Where should I take hold of this?'' \\
+        Description & ``the surface meant for gripping by hand'' \\
+      \end{tabular}
+    \end{block}
+
+    \medskip
     Rephrasing the queries as questions or descriptions reduces mIoU by about \up{12 points}.\\[5pt]
-    Grasp, contain, and pourable fall close to zero, while \emph{cut} remains relatively strong.\\[5pt]
-    The score maps are still \emph{spatially correlated} (Pearson 0.60--0.89), which suggests
-    that the main weakness lies in \up{alignment} rather than spatial feature extraction.
+    Grasp, contain, and pourable fall close to zero, while \emph{cut} remains relatively strong.
+
+    {\setbeamercolor{block title}{fg=black,bg=black!12}
+    \setbeamercolor{block body}{fg=black,bg=black!4}
+    \begin{block}{Useful geometry, weak text alignment}
+      \scriptsize
+      Across points: rephrased \texttt{grasp} scores handle $0.30 >$ body $0.10$\
+      $\Rightarrow$ it still locates the handle region.\\[-1pt]
+      At the handle: \texttt{grasp} $0.30 <$ \texttt{lift} $0.40$\
+      $\Rightarrow$ another query wins the final class label.
+    \end{block}}
+
+    \alert{PointNet++ still distinguishes the useful region; its match to the rephrased text is too weak.}
   \end{columns}
 \end{frame}
 
 % 7. RESULTS
-\begin{frame}{Results: fine-tuning recovers the loss}
+\begin{frame}{Results: fine-tuning improves held-out phrasing}
   \begin{columns}[T]
     \column{0.44\textwidth}
     \small
@@ -231,8 +250,8 @@
     \medskip
     \footnotesize
     \begin{itemize}
-      \item Recovers \up{93\%} and \up{96\%} of the loss.
-      \item Held-out scores are only about 1.5 points below seen scores, suggesting generalisation rather than memorisation.
+      \item Held-out questions improve by \up{11.2 mIoU}; descriptions improve by \up{10.5}.
+      \item Held-out scores are close to seen scores, suggesting generalisation rather than exact phrase memorisation.
       \item Preserves canonical-word performance ($+0.7$).
     \end{itemize}
     \column{0.56\textwidth}
@@ -257,7 +276,7 @@
   \medskip
   \begin{columns}[T]
     \column{0.5\textwidth}\footnotesize
-    $\Delta$ vs.\ each rung's own pretrained run.\\
+    Values show the mIoU improvement after fine-tuning.\\
     Head alone already gives $+10.5/+10.0$.
     \column{0.5\textwidth}\footnotesize
     Performance stays nearly constant across an \up{$11\times$ parameter range}. Most of the
@@ -327,8 +346,8 @@
 \begin{frame}{Conclusion}
   \begin{itemize}
     \item We reproduced OpenAD (\up{14.40} vs. 14.37). Natural rephrasing of five affordances reduces performance by about \up{12 mIoU}.
-    \item \up{Prompt-augmented fine-tuning} of 101k params (5.7\%) recovers \up{93--96\%} on
-      \emph{held-out} wordings, preserves canonical performance, and improves the synonym benchmark from 14.40 to 18.66.
+    \item \up{Prompt-augmented fine-tuning} of 101k params (5.7\%) improves held-out questions
+      by 11.2 and descriptions by 10.5 mIoU, while preserving canonical performance.
     \item The alignment head provides most of the gain across an $11\times$ parameter range,
       indicating that the main mismatch is in \up{point-to-text alignment} rather than geometry.
   \end{itemize}
